@@ -46,6 +46,12 @@ set(
   GAM_RUNTIME_SYSTEM "libfabric" CACHE STRING
   "Runtime system to be used as backend (Default=libfabric, Supported=libfabric)")
 
+# check runtime system
+if (GAM_RUNTIME_SYSTEM AND NOT GAM_RUNTIME_SYSTEM  MATCHES
+    "^(libfabric)$")
+  message(FATAL_ERROR "Invalid value for GAM_RUNTIME_SYSTEM: ${GAM_RUNTIME_SYSTEM}")
+endif()
+
 # define the target library
 add_library(gam INTERFACE)
 add_library(gam::gam ALIAS gam)
@@ -58,6 +64,10 @@ target_include_directories(gam INTERFACE
                            $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/include>)
 
 # target attributes: dependencies
+find_package(Threads REQUIRED)
+target_link_libraries(gam INTERFACE Threads::Threads)
+
+# target attributes: implementation-specific dependencies
 if (GAM_RUNTIME_SYSTEM STREQUAL "libfabric")
   message(STATUS "Using libfabric runtime system.")
   find_package(Libfabric REQUIRED)
