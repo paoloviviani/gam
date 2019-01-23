@@ -74,14 +74,14 @@ class fl_connectionless {
     // init AV
     ret += fi_av_open(fl_domain_, &av_attr, &av, NULL);
 
-    DBGASSERT(!ret);
+    assert(!ret);
   }
 
   static void fini_links() {
     int ret = 0;
 
     ret += fi_close(&av->fid);
-    DBGASSERT(!ret);
+    assert(!ret);
 
     fl_fini();
     fi_freeinfo(fl_info_);
@@ -93,9 +93,14 @@ class fl_connectionless {
   void add(executor_id i, char *node, char *svc) {
     LOGLN("LKS @%p adding SEND to=%llu node=%s svc=%s", this, i, node, svc);
 
+    // translate the address
+    struct fi_info *fi;
+    fl_dst_addr(node, svc, &fi, 0);
+
     // insert address to AV
     fi_addr_t fi_addr;
-    fi_av_insertsvc(av, node, svc, &fi_addr, 0, NULL);
+    int ret = fi_av_insert(av, fi->dest_addr, 1, &fi_addr, 0, NULL);
+    assert(ret == 1);
 
     // map rank to av index
     rank_to_addr[i] = fi_addr;
@@ -125,7 +130,7 @@ class fl_connectionless {
     ret += fi_close(&rxcq->fid);
     ret += fi_close(&txcq->fid);
 
-    DBGASSERT(!ret);
+    assert(!ret);
   }
 
   /*
@@ -142,22 +147,22 @@ class fl_connectionless {
       ret += fl_tx(ep_, txcq, p, size, rank_to_addr[to]);
     for (to = self + 1; to < rank_to_addr.size(); ++to)
       ret += fl_tx(ep_, txcq, p, size, rank_to_addr[to]);
-    DBGASSERT(!ret);
+    assert(!ret);
   }
 
   void raw_send(const void *p, const size_t size, const executor_id to) {
     ssize_t ret = fl_tx(ep_, txcq, p, size, rank_to_addr[to]);
-    DBGASSERT(!ret);
+    assert(!ret);
   }
 
   void raw_recv(void *p, const size_t size, const executor_id from) {
     ssize_t ret = rx(p, size, rank_to_addr[from]);
-    DBGASSERT(!ret);
+    assert(!ret);
   }
 
   void raw_recv(void *p, const size_t size) {
     ssize_t ret = rx(p, size, FI_ADDR_UNSPEC);
-    DBGASSERT(!ret);
+    assert(!ret);
   }
 
   /*
@@ -169,7 +174,7 @@ class fl_connectionless {
    */
   void nb_recv(void *p, const size_t size) {
     ssize_t ret = fl_post_rx(ep_, p, size, FI_ADDR_UNSPEC);
-    DBGASSERT(!ret);
+    assert(!ret);
   }
 
   bool nb_poll() {
@@ -178,7 +183,7 @@ class fl_connectionless {
     if (ret > 0)
       return true;
     else {
-      DBGASSERT(ret == -FI_EAGAIN);
+      assert(ret == -FI_EAGAIN);
       return false;
     }
   }
@@ -224,7 +229,7 @@ class fl_connectionless {
     ret += fi_ep_bind(ep_, &av->fid, 0);
 
     ret += fi_enable(ep_);
-    DBGASSERT(!ret);
+    assert(!ret);
 
     // clean-up
     fi_freeinfo(fi);

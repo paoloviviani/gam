@@ -35,7 +35,6 @@
 #include <rdma/fabric.h>
 #include <rdma/fi_domain.h>
 
-#include "gam/utils.hpp"
 
 namespace gam {
 
@@ -96,6 +95,11 @@ static void fl_getinfo(fi_info **fi,                           //
 #endif
 }
 
+static int fl_dst_addr(char *node, char *service, struct fi_info **fi_dst,
+                       uint64_t flags) {
+  return fi_getinfo(FL_FI_VERSION, node, service, flags, fl_info_, fi_dst);
+}
+
 static void fl_init(fi_info *fi) {
   int ret = 0;
 
@@ -105,7 +109,7 @@ static void fl_init(fi_info *fi) {
   // init domain
   ret += fi_domain(fl_fabric_, fi, &fl_domain_, NULL);
 
-  DBGASSERT(!ret);
+  assert(!ret);
 }
 
 static void fl_fini() {
@@ -113,7 +117,7 @@ static void fl_fini() {
 
   ret += fi_close(&fl_domain_->fid);
   ret += fi_close(&fl_fabric_->fid);
-  DBGASSERT(!ret);
+  assert(!ret);
 }
 
 /*
